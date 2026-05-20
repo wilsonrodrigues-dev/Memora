@@ -1,0 +1,103 @@
+import { Router } from "express";
+import multer from "multer";
+import fs from "fs";
+import { google } from "googleapis";
+
+
+import authorize from "../config/googleDrive.js";
+import { config } from "../config/config.js";
+
+const router = Router();
+
+const upload = multer({
+  dest: "uploads/",
+});
+
+
+
+router.post("/", upload.array("file", 20), async (req, res) => {
+  try {
+
+    // OAuth authorization
+    const auth = await authorize();
+
+    // Google Drive instance
+    const driveService = google.drive({
+      version: "v3",
+      auth,
+    });
+
+    const uploadedFiles = [];
+
+    for (const file of req.files) {
+
+      const fileMetadata = {
+        name: file.originalname,
+        parents: [config.GOOGLE_DRIVE_FOLDER_ID],
+      };
+
+      const media = {
+        mimeType: file.mimetype,
+        body: fs.createReadStream(file.path),
+      };
+
+      const response = await driveService.files.create({
+        resource: fileMetadata,
+        media,
+        fields: "id",
+      });
+
+      uploadedFiles.push({
+        fileName: file.originalname,
+        fileId: response.data.id,
+      });
+
+      // delete temporary uploaded file
+      fs.unlinkSync(file.path);
+    }
+
+    res.json({
+      success: true,
+      files: uploadedFiles,
+    });
+
+  } catch (error) {
+
+    console.log(error);
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+router.get("/", async (req, res) => {
+  try {
+    const auth = await authorize();
+    const driveService = google.drive({
+      version: "v3",
+      auth,
+    });
+
+    const response = await driveService.files.list({
+      q: `'${config.GOOGLE_DRIVE_FOLDER_ID}' in parents and trashed = false`,
+      fields: "files(id, name, mimeType, webViewLink, webContentLink, thumbnailLink, createdTime)",
+      orderBy: "createdTime desc",
+      pageSize: 100,
+    });
+
+    res.json({
+      success: true,
+      files: response.data.files,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+export default router;
