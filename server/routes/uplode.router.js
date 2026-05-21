@@ -2,9 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import fs from "fs";
 import { google } from "googleapis";
-
-
-import authorize from "../config/googleDrive.js";
+import oAuth2Client from "../config/googleDrive.js";
 import { config } from "../config/config.js";
 
 const router = Router();
@@ -13,18 +11,12 @@ const upload = multer({
   dest: "uploads/",
 });
 
-
-
 router.post("/", upload.array("file", 20), async (req, res) => {
   try {
 
-    // OAuth authorization
-    const auth = await authorize();
-
-    // Google Drive instance
     const driveService = google.drive({
       version: "v3",
-      auth,
+      auth: oAuth2Client,
     });
 
     const uploadedFiles = [];
@@ -52,7 +44,6 @@ router.post("/", upload.array("file", 20), async (req, res) => {
         fileId: response.data.id,
       });
 
-      // delete temporary uploaded file
       fs.unlinkSync(file.path);
     }
 
@@ -74,10 +65,10 @@ router.post("/", upload.array("file", 20), async (req, res) => {
 
 router.get("/", async (req, res) => {
   try {
-    const auth = await authorize();
+
     const driveService = google.drive({
       version: "v3",
-      auth,
+      auth: oAuth2Client,
     });
 
     const response = await driveService.files.list({
@@ -91,8 +82,11 @@ router.get("/", async (req, res) => {
       success: true,
       files: response.data.files,
     });
+
   } catch (error) {
+
     console.log(error);
+
     res.status(500).json({
       success: false,
       message: error.message,
