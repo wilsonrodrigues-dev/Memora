@@ -15,6 +15,10 @@ app.use(express.json());
 /* API Routes */
 app.use("/api/upload", uploadRoute);
 
+app.get("/", (req, res) => {
+  res.send("Memora Server Running");
+});
+
 /* Static Frontend */
 app.use(express.static(path.join(__dirname, "../public")));
 
