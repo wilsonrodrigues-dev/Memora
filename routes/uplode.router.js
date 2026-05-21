@@ -2,7 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import fs from "fs";
 import { google } from "googleapis";
-import oAuth2Client from "../config/googleDrive.js";
+import oAuth2Client from "../config/googledrive.js";
 import { config } from "../config/config.js";
 
 const router = Router();
