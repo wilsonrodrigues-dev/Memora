@@ -53,7 +53,7 @@ if(!process.env.expiry_date) {
 
 
 export const config={
-    PORT:process.env.PORT,
+    PORT:process.env.PORT||3000,
     GOOGLE_DRIVE_FOLDER_ID:process.env.GOOGLE_DRIVE_FOLDER_ID,
     client_secret:process.env.client_secret,
     client_id:process.env.client_id,
